@@ -1,0 +1,81 @@
+<mvc:View controllerName="todolist.controller.View1"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    xmlns:core="sap.ui.core">
+
+    <Page id="page" title="{i18n>title}">
+         <content>
+
+            <!-- Add Task -->
+            <HBox class="sapUiSmallMargin">
+                <Input
+                    width="85%"
+                    placeholder="Add a list item..."
+                    value="{/newTask}" />
+                <Button
+                    icon="sap-icon://add"
+                    type="Transparent"
+                    press="onAddTask"/>
+            </HBox>
+
+            <!-- Task List -->
+            <List
+                items="{/tasks}"
+                showSeparators="None"
+                class="sapUiSmallMarginTop">
+
+                <items>
+                    <CustomListItem>
+                        <HBox alignItems="Center" justifyContent="SpaceBetween">
+
+                            <!-- Checkbox + Text -->
+                            <HBox alignItems="Center" width="100%">
+                                <CheckBox
+                                    selected="{completed}"
+                                    select="onToggleComplete"/>
+
+                                <Text
+                                    text="{title}"
+                                    visible="{= !${isEditing} }"
+                                    class="sapUiTinyMarginBegin"
+                                    wrapping="true">
+                                    <customData>
+                                        <core:CustomData
+                                            key="style"
+                                            writeToDom="true"
+                                            value="{= ${completed}
+                                                ? 'text-decoration:line-through;color:#9e9e9e;'
+                                                : 'color:#212121;' }"/>
+                                    </customData>
+                                </Text>
+
+                                <Input
+                                    value="{title}"
+                                    visible="{isEditing}"
+                                    width="100%"
+                                    submit="onSaveEdit"
+                                    blur="onSaveEdit"
+                                    class="sapUiTinyMarginBegin"/>
+                            </HBox>
+
+                            <!-- Actions -->
+                            <HBox>
+                                <Button
+                                    icon="sap-icon://edit"
+                                    type="Transparent"
+                                    press="onStartEdit"/>
+
+                                <Button
+                                    icon="sap-icon://delete"
+                                    type="Transparent"
+                                    press="onDeleteTask"/>
+                            </HBox>
+
+                        </HBox>
+                    </CustomListItem>
+                </items>
+            </List>
+
+        </content>
+    </Page>
+</mvc:View>
