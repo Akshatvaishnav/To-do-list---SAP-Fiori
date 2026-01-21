@@ -1,88 +1,93 @@
 sap.ui.define([
     "sap/ui/core/mvc/Controller",
-    "sap/ui/model/json/JSONModel"
-], function (Controller, JSONModel) {
+    "sap/ui/model/json/JSONModel",
+    "sap/ui/core/Theming"
+], function (Controller, JSONModel, Theming) {
     "use strict";
 
-    const STORAGE_KEY = "sap.todo.tasks";
+    const TASK_KEY = "todo.tasks";
+    const THEME_KEY = "todo.theme";
 
-    return Controller.extend("todo.controller.Todo", {
+    return Controller.extend("todolist.controller.View1", {
 
-        onInit: function () {
-            const aStoredTasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        onInit() {
+            const tasks = JSON.parse(localStorage.getItem(TASK_KEY)) || [
+                { title: "My first task", completed: false, isEditing: false }
+            ];
 
-            const oModel = new JSONModel({
+            const theme = localStorage.getItem(THEME_KEY) || "sap_horizon";
+            Theming.setTheme(theme);
+
+            this.getView().setModel(new JSONModel({
                 newTask: "",
-                tasks: aStoredTasks
-            });
-
-            this.getView().setModel(oModel);
+                tasks: tasks,
+                theme: theme
+            }));
         },
 
-        /* ================= SAVE TO LOCAL ================= */
-        _saveToLocal: function () {
-            const aTasks = this.getView().getModel().getProperty("/tasks");
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(aTasks));
+        _save() {
+            localStorage.setItem(
+                TASK_KEY,
+                JSON.stringify(this.getView().getModel().getProperty("/tasks"))
+            );
         },
 
-        /* ================= ADD ================= */
-        onAddTask: function () {
-            const oModel = this.getView().getModel();
-            const sTask = oModel.getProperty("/newTask");
-            if (!sTask) return;
+        onAdd() {
+            const m = this.getView().getModel();
+            const text = m.getProperty("/newTask");
+            if (!text) return;
 
-            const aTasks = oModel.getProperty("/tasks");
-            aTasks.push({
-                title: sTask,
+            m.getProperty("/tasks").push({
+                title: text,
                 completed: false,
                 isEditing: false
             });
 
-            oModel.setProperty("/newTask", "");
-            oModel.refresh();
-            this._saveToLocal();
+            m.setProperty("/newTask", "");
+            m.refresh();
+            this._save();
         },
 
-        /* ================= EDIT ================= */
-        onStartEdit: function (oEvent) {
-            const sPath = oEvent.getSource().getBindingContext().getPath();
-            this.getView().getModel().setProperty(sPath + "/isEditing", true);
+        onEdit(e) {
+            const path = e.getSource().getBindingContext().getPath();
+            const m = this.getView().getModel();
+            m.setProperty(path + "/isEditing", !m.getProperty(path + "/isEditing"));
+            this._save();
         },
 
-        onSaveEdit: function (oEvent) {
-            const sPath = oEvent.getSource().getBindingContext().getPath();
-            this.getView().getModel().setProperty(sPath + "/isEditing", false);
-            this._saveToLocal();
+        onSaveEdit(e) {
+            const path = e.getSource().getBindingContext().getPath();
+            this.getView().getModel().setProperty(path + "/isEditing", false);
+            this._save();
         },
 
-        /* ================= CHECKBOX ================= */
-        onToggleComplete: function () {
-            const oModel = this.getView().getModel();
-            let aTasks = oModel.getProperty("/tasks");
+        onToggle() {
+            const m = this.getView().getModel();
+            let t = m.getProperty("/tasks");
 
-            // Move completed tasks down (Google Keep style)
-            aTasks = [
-                ...aTasks.filter(t => !t.completed),
-                ...aTasks.filter(t => t.completed)
-            ];
-
-            oModel.setProperty("/tasks", aTasks);
-            this._saveToLocal();
+            t = [...t.filter(x => !x.completed), ...t.filter(x => x.completed)];
+            m.setProperty("/tasks", t);
+            this._save();
         },
 
-        /* ================= DELETE ================= */
-        onDeleteTask: function (oEvent) {
-            const oModel = this.getView().getModel();
-            const aTasks = oModel.getProperty("/tasks");
+        onDelete(e) {
+            const m = this.getView().getModel();
+            const i = e.getSource().getBindingContext().getPath().split("/")[2];
+            m.getProperty("/tasks").splice(i, 1);
+            m.refresh();
+            this._save();
+        },
 
-            const iIndex = oEvent.getSource()
-                .getBindingContext()
-                .getPath()
-                .split("/")[2];
+        onToggleTheme() {
+            const m = this.getView().getModel();
+            const current = m.getProperty("/theme");
+            const next = current === "sap_horizon"
+                ? "sap_horizon_dark"
+                : "sap_horizon";
 
-            aTasks.splice(iIndex, 1);
-            oModel.refresh();
-            this._saveToLocal();
+            Theming.setTheme(next);
+            m.setProperty("/theme", next);
+            localStorage.setItem(THEME_KEY, next);
         }
     });
 });
